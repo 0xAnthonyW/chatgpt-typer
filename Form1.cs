@@ -62,7 +62,13 @@ namespace chatgpt_typer
                 if (stopTyping)
                     break;
 
-                SendKeys.SendWait(c.ToString());
+                string key = c.ToString();
+                // Check if the character is one of the special characters that SendKeys needs to have enclosed in braces
+                if ("^%~+(){}".Contains(key))
+                {
+                    key = $"{{{key}}}";
+                }
+                SendKeys.SendWait(key);
 
                 // Introduce a random delay within a certain range
                 int randomDelay = rng.Next(delay / 2, delay * 3 / 2);
@@ -73,7 +79,7 @@ namespace chatgpt_typer
                 {
                     // Simulate a mistake by sending a backspace and retyping the character
                     SendKeys.SendWait("{BACKSPACE}");
-                    SendKeys.SendWait(c.ToString());
+                    SendKeys.SendWait(key);
 
                     // Optionally add a delay after correcting the mistake
                     await Task.Delay(randomDelay);
