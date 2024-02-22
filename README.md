@@ -1,6 +1,6 @@
 # ChatGPT Typer
 
-![screenshot](https://github.com/0xAnthonyW/chatgpt-typer/blob/master/img/Chatgpt-typer.PNG)
+![screenshot](https://github.com/0xAnthonyW/chatgpt-typer/blob/master/img/Chatgpt-typer-img.PNG)
 
 ## Features
 
