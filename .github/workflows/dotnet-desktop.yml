@@ -51,3 +51,4 @@ jobs:
         path: .github/workflows/**
         if-no-files-found: warn
         retention-days: 10
+        overwrite: true
