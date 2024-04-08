@@ -1,4 +1,4 @@
-name: .NET Core Desktop
+name: .NET Core Desktop CI/CD
 
 on:
   push:
@@ -6,51 +6,54 @@ on:
   pull_request:
     branches: [ "master" ]
 
+permissions:
+  contents: write
+  actions: read
+
 jobs:
-  build:
+  build-and-release:
+    runs-on: windows-latest
     strategy:
       matrix:
         configuration: [Debug, Release]
-    runs-on: windows-latest
-
     env:
       Solution_Name: chatgpt-typer.sln
       Test_Project_Path: chatgpt-typer.csproj
       Publish_Directory: publish/${{ matrix.configuration }}
 
     steps:
-    - name: Checkout
+    - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Install .NET Core
+    - name: Install .NET SDK
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: '8.0.x'  # Update to your project's .NET version
 
-    - name: Setup MSBuild.exe
+    - name: Setup MSBuild Path
       uses: microsoft/setup-msbuild@v2
 
-    - name: Restore the application
+    - name: Restore Dependencies
       run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
       env:
         Configuration: ${{ matrix.configuration }}
 
-    - name: Build solution
+    - name: Build Solution
       run: msbuild $env:Solution_Name /p:Configuration=$env:Configuration /p:Platform="Any CPU"
       env:
         Configuration: ${{ matrix.configuration }}
 
-    - name: Execute unit tests
+    - name: Execute Tests
       run: dotnet test $env:Test_Project_Path /p:Configuration=$env:Configuration
       env:
         Configuration: ${{ matrix.configuration }}
 
-    - name: Publish the application
+    - name: Publish Application
       run: dotnet publish $env:Solution_Name --configuration ${{ matrix.configuration }} --output ${{ env.Publish_Directory }}
       env:
         Configuration: ${{ matrix.configuration }}
 
-    - name: Package the application
+    - name: Package Application
       run: Compress-Archive -Path ${{ env.Publish_Directory }}/* -DestinationPath myApplication-${{ matrix.configuration }}.zip
 
     - name: Upload Application Artifact
@@ -58,18 +61,14 @@ jobs:
       with:
         name: myApplication-${{ matrix.configuration }}
         path: myApplication-${{ matrix.configuration }}.zip
-        if-no-files-found: warn
-        retention-days: 10
 
-    # Optional: Create Release and Upload Artifact to Release
     - if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
       name: Create Release
-      id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.run_number }}
+        tag_name: release-${{ github.run_number }}
         release_name: Release ${{ github.run_number }}
         draft: false
         prerelease: false
