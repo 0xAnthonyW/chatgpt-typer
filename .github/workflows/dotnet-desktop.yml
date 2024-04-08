@@ -25,36 +25,28 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Install .NET SDK
+    - name: Setup .NET SDK
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x'  # Update to your project's .NET version
+        dotnet-version: '8.0.x'  # Specify the .NET version your project targets
 
     - name: Setup MSBuild Path
-      uses: microsoft/setup-msbuild@v2
+      uses: microsoft/setup-msbuild@v2  # This step sets up MSBuild in the GitHub Actions environment
 
     - name: Restore Dependencies
-      run: dotnet restore $env:Solution_Name
-      env:
-        Configuration: ${{ matrix.configuration }}
+      run: dotnet restore ${{ env.Solution_Name }}
 
     - name: Build Solution
-      run: msbuild $env:Solution_Name /p:Configuration=$env:Configuration /p:Platform="Any CPU"
-      env:
-        Configuration: ${{ matrix.configuration }}
+      run: msbuild ${{ env.Solution_Name }} /p:Configuration=${{ matrix.configuration }} /p:Platform="Any CPU"
 
     - name: Execute Tests
-      run: dotnet test $env:Test_Project_Path /p:Configuration=$env:Configuration
-      env:
-        Configuration: ${{ matrix.configuration }}
+      run: dotnet test ${{ env.Test_Project_Path }} --no-restore --verbosity normal
 
     - name: Publish Application
-      run: dotnet publish $env:Solution_Name --configuration ${{ matrix.configuration }} --output ${{ env.Publish_Directory }}
-      env:
-        Configuration: ${{ matrix.configuration }}
+      run: dotnet publish ${{ env.Solution_Name }} --configuration ${{ matrix.configuration }} --output ${{ env.Publish_Directory }}
 
     - name: Package Application
-      run: Compress-Archive -Path ${{ env.Publish_Directory }}/* -DestinationPath myApplication-${{ matrix.configuration }}.zip
+      run: Compress-Archive -Path ${{ env.Publish_Directory }}/* -DestinationPath ./myApplication-${{ matrix.configuration }}.zip
 
     - name: Create Release
       id: create_release
@@ -62,8 +54,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: release-${{ github.run_number }}
-        release_name: Release ${{ github.run_number }}
+        tag_name: release-${{ github.run_number }}-${{ matrix.configuration }}-${{ github.sha }}
+        release_name: Release ${{ github.run_number }} ${{ matrix.configuration }} at ${{ github.event.head_commit.timestamp }}
         draft: false
         prerelease: false
 
