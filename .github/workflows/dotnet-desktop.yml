@@ -34,7 +34,7 @@ jobs:
       uses: microsoft/setup-msbuild@v2
 
     - name: Restore Dependencies
-      run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
+      run: dotnet restore $env:Solution_Name
       env:
         Configuration: ${{ matrix.configuration }}
 
@@ -56,14 +56,8 @@ jobs:
     - name: Package Application
       run: Compress-Archive -Path ${{ env.Publish_Directory }}/* -DestinationPath myApplication-${{ matrix.configuration }}.zip
 
-    - name: Upload Application Artifact
-      uses: actions/upload-artifact@v4.3.1
-      with:
-        name: myApplication-${{ matrix.configuration }}
-        path: myApplication-${{ matrix.configuration }}.zip
-
-    - if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
-      name: Create Release
+    - name: Create Release
+      id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -73,8 +67,7 @@ jobs:
         draft: false
         prerelease: false
 
-    - if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
-      name: Upload Release Asset
+    - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
