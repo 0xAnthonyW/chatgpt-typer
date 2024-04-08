@@ -16,6 +16,7 @@ jobs:
     env:
       Solution_Name: chatgpt-typer.sln
       Test_Project_Path: chatgpt-typer.csproj
+      Publish_Directory: publish/${{ matrix.configuration }}
 
     steps:
     - name: Checkout
@@ -44,11 +45,42 @@ jobs:
       env:
         Configuration: ${{ matrix.configuration }}
 
-    - name: Upload Workflow Files
+    - name: Publish the application
+      run: dotnet publish $env:Solution_Name --configuration ${{ matrix.configuration }} --output ${{ env.Publish_Directory }}
+      env:
+        Configuration: ${{ matrix.configuration }}
+
+    - name: Package the application
+      run: Compress-Archive -Path ${{ env.Publish_Directory }}/* -DestinationPath myApplication-${{ matrix.configuration }}.zip
+
+    - name: Upload Application Artifact
       uses: actions/upload-artifact@v4.3.1
       with:
-        name: workflow-files
-        path: .github/workflows/**
+        name: myApplication-${{ matrix.configuration }}
+        path: myApplication-${{ matrix.configuration }}.zip
         if-no-files-found: warn
         retention-days: 10
-        overwrite: true
+
+    # Optional: Create Release and Upload Artifact to Release
+    - if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+      name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.run_number }}
+        release_name: Release ${{ github.run_number }}
+        draft: false
+        prerelease: false
+
+    - if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+      name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./myApplication-${{ matrix.configuration }}.zip
+        asset_name: myApplication-${{ matrix.configuration }}.zip
+        asset_content_type: application/zip
