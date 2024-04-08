@@ -58,8 +58,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
 
     - name: Install .NET Core
       uses: actions/setup-dotnet@v4
@@ -69,12 +67,25 @@ jobs:
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v2
 
-    - name: Execute unit tests
-      run: dotnet test $env:Test_Project_Path /p:Configuration=$env:Configuration
-      env:
-        Configuration: ${{ matrix.configuration }}
-
     - name: Restore the application
       run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
       env:
         Configuration: ${{ matrix.configuration }}
+
+    - name: Build solution
+      run: msbuild $env:Solution_Name /p:Configuration=$env:Configuration /p:Platform="Any CPU"
+      env:
+        Configuration: ${{ matrix.configuration }}
+
+    - name: Execute unit tests
+      run: dotnet test $env:Test_Project_Path /p:Configuration=$env:Configuration
+      env:
+        Configuration: ${{ matrix.configuration }}
+        
+- name: Upload Workflow Files
+  uses: actions/upload-artifact@v4.3.1
+  with:
+    name: workflow-files # Name your artifact
+    path: .github/workflows/** # Specify the path to the files or directory to upload
+    if-no-files-found: warn # Choose behavior if no files are found: warn, error, or ignore
+    retention-days: 10 # Optional: specify retention duration in days
