@@ -11,6 +11,8 @@
 ## Installation
 
 To use ChatGPT Typer, clone the repository to your local machine and compile it using Visual Studio or a compatible .NET development environment.
+For the latest releases, visit the [Releases Page](https://github.com/0xAnthonyW/chatgpt-typer/releases).
+
 
 ```bash
 git clone https://github.com/0xAnthonyW/chatgpt-typer.git
